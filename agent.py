@@ -25,7 +25,8 @@ def log(event, content):
         f.write(f"[{timestamp}] {event.upper()}: {content}\n")
 
 rate_limiter = RateLimiter(max_per_minute=10)
-last_seen = 0
+messages_init = get_messages(since=0)
+last_seen = messages_init[-1]["seq"] if messages_init else 0
 messages_sent = 0
 MAX_MESSAGES = 10
 total_tokens = 0
