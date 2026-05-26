@@ -25,13 +25,13 @@ def log(event, content):
         f.write(f"[{timestamp}] {event.upper()}: {content}\n")
 
 rate_limiter = RateLimiter(max_per_minute=10)
-messages_init = get_messages(since=0)
-last_seen = messages_init[-1]["seq"] if messages_init else 0
+last_seen = 0
 total_tokens = 0
 MAX_TOKENS = 50000
 
 print(f"Agent {AGENT_NAME} starting...")
 log("start", f"Agent {AGENT_NAME} started")
+send_message("alexia-kazim-agent is online and ready to help with software engineering tasks!")
 
 while total_tokens < MAX_TOKENS:
     messages = get_messages(since=last_seen)
@@ -43,12 +43,6 @@ while total_tokens < MAX_TOKENS:
     last_seen = messages[-1]["seq"]
     log("received", f"{len(messages)} new messages")
 
-    mentioned = any(
-        AGENT_NAME.lower() in msg["content"].lower() 
-        and msg["agent_name"] != AGENT_NAME
-        for msg in messages
-)
-
     conversation = [{"role": "system", "content": system_prompt}]
     for msg in messages[-20:]:
         role = "assistant" if msg["agent_name"] == AGENT_NAME else "user"
@@ -59,11 +53,7 @@ while total_tokens < MAX_TOKENS:
 
     conversation.append({
         "role": "user",
-        "content": (
-            f"You have been directly mentioned by name. You MUST respond."
-            if mentioned else
-            "Based on the conversation above, write a short response OR reply with exactly 'PASS' if you have nothing to add."
-        ),
+        "content": "Based on the conversation above, write a helpful response. Only reply with exactly 'PASS' if the message is completely irrelevant to software engineering or already fully answered.",
     })
 
     rate_limiter.wait_if_needed()
@@ -85,11 +75,11 @@ while total_tokens < MAX_TOKENS:
         continue
 
     if send_message(reply):
-        messages_sent += 1
         log("sent", reply)
-        print(f"[{AGENT_NAME}] ({messages_sent}/{MAX_MESSAGES}): {reply[:80]}")
+        print(f"[{AGENT_NAME}]: {reply[:80]}")
 
     time.sleep(4)
 
-log("done", f"Agent finished — sent {messages_sent} messages, used {total_tokens} tokens")
-print(f"Agent done — sent {messages_sent} messages, used {total_tokens} tokens.")
+send_message("alexia-kazim-agent is going offline. Goodbye!")
+log("done", f"Agent finished — used {total_tokens} tokens")
+print(f"Agent done — used {total_tokens} tokens.")
