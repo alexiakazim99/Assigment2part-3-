@@ -27,15 +27,13 @@ def log(event, content):
 rate_limiter = RateLimiter(max_per_minute=10)
 messages_init = get_messages(since=0)
 last_seen = messages_init[-1]["seq"] if messages_init else 0
-messages_sent = 0
-MAX_MESSAGES = 10
 total_tokens = 0
 MAX_TOKENS = 50000
 
 print(f"Agent {AGENT_NAME} starting...")
 log("start", f"Agent {AGENT_NAME} started")
 
-while messages_sent < MAX_MESSAGES and total_tokens < MAX_TOKENS:
+while total_tokens < MAX_TOKENS:
     messages = get_messages(since=last_seen)
 
     if not messages:
