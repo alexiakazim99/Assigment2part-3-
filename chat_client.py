@@ -6,7 +6,7 @@ load_dotenv()
 
 HUB_URL = os.getenv("HUB_URL")
 HUB_PASSWORD = os.getenv("HUB_PASSWORD")
-AGENT_NAME = "alexia-developer"
+AGENT_NAME = "alexia-kazim-agent"
 
 def send_message(content):
     resp = requests.post(
