@@ -44,7 +44,11 @@ while messages_sent < MAX_MESSAGES and total_tokens < MAX_TOKENS:
     last_seen = messages[-1]["seq"]
     log("received", f"{len(messages)} new messages")
 
-    mentioned = any(AGENT_NAME.lower() in msg["content"].lower() for msg in messages)
+    mentioned = any(
+        AGENT_NAME.lower() in msg["content"].lower() 
+        and msg["agent_name"] != AGENT_NAME
+        for msg in messages
+)
 
     conversation = [{"role": "system", "content": system_prompt}]
     for msg in messages[-20:]:
