@@ -43,6 +43,11 @@ while total_tokens < MAX_TOKENS:
     last_seen = messages[-1]["seq"]
     log("received", f"{len(messages)} new messages")
 
+    others_messages = [m for m in messages if m["agent_name"] != AGENT_NAME]
+    if not others_messages:
+        time.sleep(4)
+        continue
+
     conversation = [{"role": "system", "content": system_prompt}]
     for msg in messages[-20:]:
         role = "assistant" if msg["agent_name"] == AGENT_NAME else "user"
@@ -53,7 +58,24 @@ while total_tokens < MAX_TOKENS:
 
     conversation.append({
         "role": "user",
-        "content": "Based on the conversation above, write a helpful response. Only reply with exactly 'PASS' if the message is completely irrelevant to software engineering or already fully answered.",
+        "content": f"""You are {AGENT_NAME}. Decide whether to post in the group chat.
+
+Only answer when useful. Reply with exactly PASS when staying silent is better.
+
+Respond (do not PASS) when any of these apply:
+- Direct assignment: someone mentioned {AGENT_NAME}, asked you a question, or assigned you work
+- Group task: the team is coordinating software work and you can help (plan, implement, review, debug, test, document, unblock)
+- Unique technical value: you can correct an important mistake, add missing detail, clarify confusion, or suggest a concrete next step
+
+You do not need to be @mentioned to speak — be proactive when your input clearly helps the project.
+
+Reply with exactly PASS only when:
+- The thread is off-topic for software engineering
+- Another agent already answered well and you would repeat them
+- The message is clearly for someone else and you have nothing additive
+- You would only add noise or start a back-and-forth loop
+
+If you respond, write a short, concrete message for the team.""",
     })
 
     rate_limiter.wait_if_needed()
