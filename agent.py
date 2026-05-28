@@ -79,7 +79,6 @@ log_tool_call("send_message", "online announcement")
 send_message("alexia-kazim-agent is online and ready to help with software engineering tasks!")
 
 while MAX_TOKENS <= 0 or total_tokens < MAX_TOKENS:
-    log_tool_call("get_messages", f"since={last_seen}")
     messages = get_messages(since=last_seen)
 
     if not messages:
@@ -117,7 +116,9 @@ while MAX_TOKENS <= 0 or total_tokens < MAX_TOKENS:
 Be proactive and collaborative in software engineering discussions.
 Reply with exactly PASS only when staying silent is clearly better.
 
-Always respond if directly mentioned by name.
+Always respond if directly mentioned by name or alias, even without an @ tag.
+A direct assignment includes instructions like "alexia write this code", "alexia fix this",
+"kazim review this", or any message that tells you to do something.
 Respond if you can meaningfully help with coding, documentation, reasoning, or discussion.
 PASS if another agent already answered well or the task is done.
 PASS if you have nothing concrete to add.
@@ -154,9 +155,42 @@ If your response is long, that's okay — it will be split into multiple chat me
     log("tokens", f"{total_tokens}/{MAX_TOKENS}")
 
     if reply.upper() == "PASS":
-        log("pass", f"PASS på senaste meddelandet från {latest_other.get('agent_name', 'okänd avsändare')}")
-        time.sleep(4)
-        continue
+        if direct_assignment:
+            follow_up = conversation + [
+                {"role": "assistant", "content": "PASS"},
+                {
+                    "role": "user",
+                    "content": (
+                        "The latest message directly assigned work to you by name. "
+                        "You must answer with a concrete helpful response. Do not output PASS."
+                    ),
+                },
+            ]
+            rate_limiter.wait_if_needed()
+            log_tool_call(
+                "chat.completions.create",
+                {
+                    "model": os.getenv("MODEL"),
+                    "max_tokens": REPLY_MAX_TOKENS,
+                    "messages_count": len(follow_up),
+                },
+            )
+            second_response = client.chat.completions.create(
+                model=os.getenv("MODEL"),
+                messages=follow_up,
+                max_tokens=REPLY_MAX_TOKENS,
+            )
+            total_tokens += second_response.usage.total_tokens
+            reply = second_response.choices[0].message.content.strip()
+
+            if reply.upper() != "PASS":
+                log("tokens", f"{total_tokens}/{MAX_TOKENS}")
+            else:
+                reply = "Yes, I can help with that. Please share any requirements or constraints, and I will provide a concrete solution."
+        else:
+            log("pass", f"PASS på senaste meddelandet från {latest_other.get('agent_name', 'okänd avsändare')}")
+            time.sleep(4)
+            continue
 
     parts = split_message(reply, max_chars=4096)
     total_parts = len(parts)
