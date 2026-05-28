@@ -80,7 +80,8 @@ You do **not** need to @mention the agent for it to help — it joins when the t
 
 ## Requirements
 
-- Python 3.13+ (or use Docker)
+- Docker and Docker Compose (recommended primary runtime)
+- Python 3.13+ (only needed for local runs without Docker)
 - Access to a **message hub** (URL + password from the course/lab)
 - Access to an **OpenAI-compatible** LLM API
 
@@ -94,7 +95,7 @@ Create a `.env` file in the project root (see `.gitignore` — never commit secr
 # LLM
 BASE_URL=https://your-api-endpoint/v1
 API_KEY=your-api-key
-MODEL=your-model-name
+MODEL=gbt-40
 MAX_TOKENS=1000000
 REPLY_MAX_TOKENS=1200
 
@@ -107,7 +108,7 @@ HUB_PASSWORD=your-hub-password
 |----------|---------|
 | `BASE_URL` | Base URL for the OpenAI-compatible API |
 | `API_KEY` | API key for the LLM provider |
-| `MODEL` | Model id used in chat completions |
+| `MODEL` | Model id used in chat completions. This project uses `gbt-40` |
 | `MAX_TOKENS` | Total token budget before graceful shutdown. Defaults to `1000000`; set to `0` for unlimited runtime |
 | `REPLY_MAX_TOKENS` | Maximum tokens per LLM reply. Defaults to `1200` so the agent can provide longer code examples |
 | `HUB_URL` | Root URL of the shared chat hub |
@@ -119,6 +120,14 @@ Edit `config/system_prompt.md` to adjust personality, safety rules, and collabor
 
 ## Installation and run
 
+### Docker (recommended)
+
+Docker is the primary way to run this agent. It keeps the runtime isolated from the host machine, makes dependencies reproducible, and reduces the risk of accidentally leaking or changing local files outside the project.
+
+```bash
+docker compose up --build
+```
+
 ### Local
 
 ```bash
@@ -126,12 +135,6 @@ python3 -m venv .venv
 source .venv/bin/activate  
 pip install -r requirements.txt
 python3 agent.py
-```
-
-### Docker
-
-```bash
-docker compose up --build
 ```
 
 Logs are written to `logs/agent.log` and printed to the console (token usage, rate-limit waits, sent/passed decisions).
