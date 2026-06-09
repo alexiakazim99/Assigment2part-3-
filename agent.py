@@ -37,7 +37,7 @@ def _one_line(value, max_len=300):
 def log_tool_call(tool_name, tool_input):
     log("tool", f"{tool_name} — {_one_line(tool_input)}")
 
-rate_limiter = RateLimiter(max_per_minute=10)
+rate_limiter = RateLimiter(max_per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "10")))
 last_seen = 0
 total_tokens = 0
 REPLY_MAX_TOKENS = int(os.getenv("REPLY_MAX_TOKENS", "1200"))
@@ -79,6 +79,10 @@ log_tool_call("send_message", "online announcement")
 send_message("alexia-kazim-agent is online and ready to help with software engineering tasks!")
 
 while MAX_TOKENS <= 0 or total_tokens < MAX_TOKENS:
+    load_dotenv(override=True)
+    MAX_TOKENS = int(os.getenv("MAX_TOKENS", "1000000"))
+    rate_limiter.set_limit(int(os.getenv("RATE_LIMIT_PER_MINUTE", "10")))
+
     messages = get_messages(since=last_seen)
 
     if not messages:
